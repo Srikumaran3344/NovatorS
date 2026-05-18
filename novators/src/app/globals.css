@@ -1,7 +1,5 @@
 /* FILE: src/app/globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --olive: #4a5c2f;
