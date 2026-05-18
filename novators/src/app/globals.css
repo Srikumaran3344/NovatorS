@@ -1,26 +1,79 @@
-@import "tailwindcss";
+/* FILE: src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --olive: #4a5c2f;
+  --olive-dark: #354220;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f5f4f1;
 }
+
+.btn-primary {
+  background-color: var(--olive);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+.btn-primary:hover { background-color: var(--olive-dark); }
+
+.btn-secondary {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-secondary:hover { background-color: #f9fafb; }
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  background: white;
+  color: #111827;
+}
+.input:focus {
+  box-shadow: 0 0 0 2px #4a5c2f40;
+  border-color: #4a5c2f;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+select.input { cursor: pointer; }
+textarea.input { resize: vertical; }
