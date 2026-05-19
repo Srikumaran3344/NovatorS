@@ -20,13 +20,8 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      router.push('/dashboard')
-      router.refresh()
-    }
+    if (error) { setError(error.message); setLoading(false) }
+    else { router.push('/dashboard'); router.refresh() }
   }
 
   return (
@@ -48,7 +43,10 @@ export default function LoginPage() {
             <input className="input" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
           </div>
           <div>
-            <label className="label">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="label" style={{ marginBottom: 0 }}>Password</label>
+              <Link href="/auth/reset" className="text-xs underline" style={{ color: 'var(--olive)' }}>Forgot password?</Link>
+            </div>
             <input className="input" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -59,9 +57,7 @@ export default function LoginPage() {
 
         <p className="mt-4 text-sm text-center text-gray-500">
           No account?{' '}
-          <Link href="/auth/register" className="font-medium underline" style={{ color: 'var(--olive)' }}>
-            Register here
-          </Link>
+          <Link href="/auth/register" className="font-medium underline" style={{ color: 'var(--olive)' }}>Register here</Link>
         </p>
       </div>
     </div>
