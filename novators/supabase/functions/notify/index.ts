@@ -2,7 +2,7 @@
 // Triggered by a Supabase Database Webhook on approval_events INSERT
 
 // Use a recent std version to ensure the module and types are available
-import { serve } from 'std/http'
+import { serve } from 'std/http/server.ts'
 
 // ─── THINGS TO CHANGE ────────────────────────────────────────────────────────
 // 1. After deploying to Vercel, set APP_URL in Supabase Edge Function secrets
