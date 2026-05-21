@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  webpack: (config) => {
+    config.watchOptions = {
+      ignored: ['**/supabase/**'],
+    }
+    return config
+  },
 };
 
 export default nextConfig;
