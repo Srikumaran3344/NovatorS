@@ -1,15 +1,8 @@
-import type { NextConfig } from "next";
+// novators/next.config.ts
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  webpack: (config) => {
-    config.watchOptions = {
-      ignored: ['**/supabase/**'],
-    }
-    return config
-  },
-};
+  turbopack: {},
+}
 
-export default nextConfig;
+export default nextConfig
