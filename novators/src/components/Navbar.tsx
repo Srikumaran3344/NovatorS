@@ -59,7 +59,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-semibold text-gray-900">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
-              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain"/>
+              <img src="/myLogo.png" alt="Logo" className="w-5 h-5 object-contain"/>
             </div>
             <span className="text-sm">SAF Project Registry</span>
           </Link>
