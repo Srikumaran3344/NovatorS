@@ -10,12 +10,12 @@ interface ApproverEmail {
   id: string
   email: string
   name: string
-  approver_role: 'OC' | 'CO'
+  approver_role: 'OC/NC' | 'CO'
 }
 
 export default function AdminPage() {
   const [approvers, setApprovers] = useState<ApproverEmail[]>([])
-  const [form, setForm] = useState({ email: '', name: '', approver_role: 'OC' as 'OC' | 'CO' })
+  const [form, setForm] = useState({ email: '', name: '', approver_role: 'OC/NC' as 'OC/NC' | 'CO' })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -40,7 +40,7 @@ export default function AdminPage() {
     const { data, error: err } = await supabase.from('approver_emails').insert(form).select().single()
     if (err) { setError(err.message); return }
     setApprovers(a => [...a, data])
-    setForm({ email: '', name: '', approver_role: 'OC' })
+    setForm({ email: '', name: '', approver_role: 'OC/NC' })
   }
 
   const removeApprover = async (id: string) => {
@@ -69,7 +69,7 @@ export default function AdminPage() {
             </div>
             <div>
               <label className="label">Role</label>
-              <select className="input" value={form.approver_role} onChange={e => setForm(f => ({ ...f, approver_role: e.target.value as 'OC' | 'CO' }))}>
+              <select className="input" value={form.approver_role} onChange={e => setForm(f => ({ ...f, approver_role: e.target.value as 'OC/NC' | 'CO' }))}>
                 <option value="OC">OC</option>
                 <option value="CO">CO</option>
               </select>

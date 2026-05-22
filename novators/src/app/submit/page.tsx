@@ -120,11 +120,11 @@ export default function SubmitPage() {
           <p className="text-sm font-semibold text-gray-700 mb-3">OC details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">OC name *</label>
+              <label className="label">OC/NC name *</label>
               <input className="input" required value={form.oc_name} onChange={e => set('oc_name', e.target.value)} />
             </div>
             <div>
-              <label className="label">OC email *</label>
+              <label className="label">OC/NC email *</label>
               <input className="input" type="email" required value={form.oc_email} onChange={e => set('oc_email', e.target.value)} />
             </div>
           </div>

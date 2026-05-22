@@ -58,10 +58,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-semibold text-gray-900">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
-              <img src="/myLogo.png" alt="Logo" className="w-5 h-5 object-contain"/>
-            </div>
-            <span className="text-sm">SAF Project Registry</span>
+            <img src="/myLogo.png" alt="Logo" className="w-8 h-8 rounded-lg flex items-center justify-center object-contain"/>
+            <span className="text-sm">NovatorS - NS innovators</span>
           </Link>
 
           {/* Desktop nav */}

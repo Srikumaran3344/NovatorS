@@ -47,7 +47,7 @@ export default function ApprovalsPage() {
         project_id: project.id,
         actor_id: profile.id,
         actor_name: `${profile.rank} ${profile.full_name}`,
-        action: 'Opened for review by OC',
+        action: 'Opened for review by OC/NC',
         from_status: 'submitted',
         to_status: 'under_oc_review',
       })
@@ -66,7 +66,7 @@ export default function ApprovalsPage() {
       archive: 'archived',
     }
     const actionLabels: Record<string, string> = {
-      approve_to_co: 'Approved by OC — forwarded to CO',
+      approve_to_co: 'Approved by OC/NC — forwarded to CO',
       approve_final: 'Approved by CO — project published',
       reject: 'Rejected',
       archive: 'Archived with remarks',
