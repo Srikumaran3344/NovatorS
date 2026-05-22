@@ -29,7 +29,9 @@ export default function UpdatePasswordPage() {
     <div className="max-w-md mx-auto mt-12">
       <div className="card p-8">
         <div className="flex items-center gap-2 mb-6">
-            <img src="/myLogo.png" alt="Logo" className="w-9 h-9 rounded-lg flex items-center justify-center object-contain"/>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
+            <img src="/myLogo.png" alt="Logo" className="w-5 h-5 object-contain"/>
+          </div>
           <div>
             <h1 className="font-bold text-gray-900 text-lg">Set new password</h1>
             <p className="text-xs text-gray-500">SAF Project Registry</p>

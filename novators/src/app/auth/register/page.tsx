@@ -50,7 +50,9 @@ export default function RegisterPage() {
     <div className="max-w-md mx-auto mt-12">
       <div className="card p-8">
         <div className="flex items-center gap-2 mb-6">
-          <img src="/myLogo.png" alt="Logo" className="w-9 h-9 rounded-lg flex items-center justify-center object-contain"/>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
+            <img src="/myLogo.png" alt="Logo" className="w-5 h-5 object-contain"/>
+          </div>
           <div>
             <h1 className="font-bold text-gray-900 text-lg leading-tight">Create account</h1>
             <p className="text-xs text-gray-500">SAF Project Registry</p>
@@ -78,7 +80,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="label">Vocation</label>
-            <input className="input" placeholder="e.g. ASA, TO(CBT)" value={form.vocation} onChange={e => set('vocation', e.target.value)} />
+            <input className="input" placeholder="e.g. Clerk, Driver, Medic" value={form.vocation} onChange={e => set('vocation', e.target.value)} />
           </div>
 
           <div>

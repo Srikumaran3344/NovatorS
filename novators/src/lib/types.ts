@@ -65,7 +65,7 @@ export interface ProjectRemark {
 
 export const STATUS_LABELS: Record<ProjectStatus, string> = {
   submitted: 'Submitted',
-  under_oc_review: 'Under OC/NC Review',
+  under_oc_review: 'Under OC Review',
   under_co_review: 'Under CO Review',
   approved: 'Approved',
   rejected: 'Rejected',
