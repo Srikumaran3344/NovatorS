@@ -74,7 +74,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    Submitted {new Date(project.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })} · OC: {project.oc_name}
+                    Submitted {new Date(project.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })} · OC/NC: {project.oc_name}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
