@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Shield } from 'lucide-react'
+
 
 export default function ResetPage() {
   const [email, setEmail] = useState('')
@@ -29,7 +29,7 @@ export default function ResetPage() {
       <div className="card p-8">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
-            <Shield className="w-5 h-5 text-white" />
+            <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain"/>
           </div>
           <div>
             <h1 className="font-bold text-gray-900 text-lg leading-tight">Reset password</h1>

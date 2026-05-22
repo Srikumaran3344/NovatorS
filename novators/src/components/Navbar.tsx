@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
-import { Shield, Menu, X, ChevronDown } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
 export default function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -59,7 +59,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-semibold text-gray-900">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
-              <Shield className="w-4 h-4 text-white" />
+              <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain"/>
             </div>
             <span className="text-sm">SAF Project Registry</span>
           </Link>

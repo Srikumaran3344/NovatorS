@@ -5,7 +5,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Shield } from 'lucide-react'
+
 
 const RANKS = ['REC','PTE','LCP','CPL','CFC','SCT','3SG','2SG','1SG','SSG','MSG','3WO','2WO','1WO','MWO','SWO','CWO','2LT','LTA','CPT','MAJ','LTC','SLTC','COL','BG','MG','LG']
 
@@ -51,7 +51,7 @@ export default function RegisterPage() {
       <div className="card p-8">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--olive)' }}>
-            <Shield className="w-5 h-5 text-white" />
+            <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain"/>
           </div>
           <div>
             <h1 className="font-bold text-gray-900 text-lg leading-tight">Create account</h1>
