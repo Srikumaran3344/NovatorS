@@ -58,7 +58,7 @@ export default function RegistryPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Registry</h1>
-        <p className="text-gray-500 text-sm">Approved innovations from 1 SAF TPT BN</p>
+        <p className="text-gray-500 text-sm">Innovations approved by Unit</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
