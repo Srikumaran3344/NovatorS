@@ -1,4 +1,4 @@
-// PAGE 6 — src/app/approvals/page.tsx — OC/CO Approval Queue
+// PAGE 6 — src/app/approvals/page.tsx — OC/NC and CO Approval Queue
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ import { CheckCircle, XCircle, Archive, ExternalLink, GitBranch, FileText, Chevr
 
 export default function ApprovalsPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [approverType, setApproverType] = useState<'OC/NC' | 'CO' | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [actingOn, setActingOn] = useState<string | null>(null)
@@ -21,28 +22,54 @@ export default function ApprovalsPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/auth/login'); return }
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
+      const { data: p } = await supabase
+        .from('profiles')
+        .select('*, approver_type')
+        .eq('id', user.id)
+        .single()
+
       if (!p || !['approver', 'admin'].includes(p.role)) { router.push('/'); return }
       setProfile(p)
+
+      // Determine what stage this person can approve
+      // OC/NC sees: submitted, under_oc_review
+      // CO sees: under_co_review
+      // Admin sees: everything
+      const type = p.approver_type as 'OC/NC' | 'CO' | null
+      setApproverType(type)
+
+      let statusFilter: string[]
+      if (p.role === 'admin') {
+        statusFilter = ['submitted', 'under_oc_review', 'under_co_review']
+      } else if (type === 'CO') {
+        statusFilter = ['under_co_review']
+      } else {
+        // OC or approver with no type — sees submitted and under_oc_review
+        statusFilter = ['submitted', 'under_oc_review']
+      }
 
       const { data } = await supabase
         .from('projects')
         .select('*, profiles(full_name, rank, company, vocation)')
-        .in('status', ['submitted', 'under_oc_review', 'under_co_review'])
+        .in('status', statusFilter)
         .order('created_at', { ascending: true })
+
       setProjects(data || [])
       setLoading(false)
     }
     load()
   }, [])
 
-  // When OC/NC opens/expands a submitted project, mark it as under_oc_review
   const handleExpand = async (project: Project) => {
     if (expanded === project.id) { setExpanded(null); return }
     setExpanded(project.id)
 
-    if (project.status === 'submitted' && profile) {
-      await supabase.from('projects').update({ status: 'under_oc_review' }).eq('id', project.id)
+    // Mark as under_oc_review when OC/NC opens a submitted project
+    if (project.status === 'submitted' && profile && approverType !== 'CO') {
+      await supabase.from('projects')
+        .update({ status: 'under_oc_review' })
+        .eq('id', project.id)
       await supabase.from('approval_events').insert({
         project_id: project.id,
         actor_id: profile.id,
@@ -51,11 +78,16 @@ export default function ApprovalsPage() {
         from_status: 'submitted',
         to_status: 'under_oc_review',
       })
-      setProjects(ps => ps.map(p => p.id === project.id ? { ...p, status: 'under_oc_review' } : p))
+      setProjects(ps => ps.map(p =>
+        p.id === project.id ? { ...p, status: 'under_oc_review' } : p
+      ))
     }
   }
 
-  const act = async (project: Project, action: 'approve_to_co' | 'approve_final' | 'reject' | 'archive') => {
+  const act = async (
+    project: Project,
+    action: 'approve_to_co' | 'approve_final' | 'reject' | 'archive'
+  ) => {
     if (!profile) return
     setActingOn(project.id)
 
@@ -75,7 +107,9 @@ export default function ApprovalsPage() {
     const newStatus = statusMap[action]
     await supabase.from('projects').update({
       status: newStatus,
-      ...(action === 'approve_final' ? { approved_by: `${profile.rank} ${profile.full_name}` } : {}),
+      ...(action === 'approve_final'
+        ? { approved_by: `${profile.rank} ${profile.full_name}` }
+        : {}),
     }).eq('id', project.id)
 
     await supabase.from('approval_events').insert({
@@ -95,22 +129,40 @@ export default function ApprovalsPage() {
 
   if (loading) return <div className="text-sm text-gray-500 py-10 text-center">Loading...</div>
 
+  const roleLabel = approverType === 'CO' ? 'CO' : approverType === 'OC/NC' ? 'OC/NC' : 'Admin'
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Pending approvals</h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          {profile?.rank} {profile?.full_name} · {projects.length} project{projects.length !== 1 ? 's' : ''} awaiting review
+          {profile?.rank} {profile?.full_name} · {roleLabel} ·{' '}
+          {projects.length} project{projects.length !== 1 ? 's' : ''} awaiting review
         </p>
       </div>
 
+      {/* Role info banner */}
+      <div className={`rounded-lg px-4 py-2.5 mb-5 text-sm border ${
+        approverType === 'CO'
+          ? 'bg-purple-50 border-purple-200 text-purple-800'
+          : 'bg-blue-50 border-blue-200 text-blue-800'
+      }`}>
+        {approverType === 'CO'
+          ? 'You are reviewing as CO — you see projects forwarded by OC/NC for final approval.'
+          : approverType === 'OC/NC'
+          ? 'You are reviewing as OC/NC — you can approve projects to forward to CO, or reject them.'
+          : 'You are reviewing as Admin — you can see and act on all stages.'}
+      </div>
+
       {projects.length === 0 ? (
-        <div className="card p-12 text-center text-gray-400">All caught up — no pending projects</div>
+        <div className="card p-12 text-center text-gray-400">
+          All caught up — no pending projects for your review stage
+        </div>
       ) : (
         <div className="space-y-3">
           {projects.map(project => (
             <div key={project.id} className="card overflow-hidden">
-              {/* Collapsed header — click to expand and mark as under review */}
+              {/* Header — click to expand */}
               <div
                 className="p-5 flex items-start gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => handleExpand(project)}
@@ -123,12 +175,15 @@ export default function ApprovalsPage() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {(project.profiles as any)?.rank} {(project.profiles as any)?.full_name} · {(project.profiles as any)?.company}
+                    {(project.profiles as any)?.rank} {(project.profiles as any)?.full_name}
+                    {' '}· {(project.profiles as any)?.company}
                     {' '}· Submitted {new Date(project.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })}
                   </p>
                 </div>
-                <div className="text-gray-400">
-                  {expanded === project.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                <div className="text-gray-400 shrink-0">
+                  {expanded === project.id
+                    ? <ChevronUp className="w-4 h-4" />
+                    : <ChevronDown className="w-4 h-4" />}
                 </div>
               </div>
 
@@ -144,7 +199,6 @@ export default function ApprovalsPage() {
                     <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{project.full_description}</p>
                   </div>
 
-                  {/* Links */}
                   <div className="flex gap-3 flex-wrap">
                     {project.demo_video_url && (
                       <a href={project.demo_video_url} target="_blank" rel="noopener noreferrer"
@@ -172,37 +226,55 @@ export default function ApprovalsPage() {
                     )}
                   </div>
 
-                  {/* Remarks */}
                   <div>
-                    <label className="label text-xs">Remarks <span className="text-gray-400 font-normal">(shown to submitter — required for reject/archive)</span></label>
-                    <textarea className="input text-sm min-h-[80px]"
+                    <label className="label text-xs">
+                      Remarks{' '}
+                      <span className="text-gray-400 font-normal">
+                        (shown to submitter — required for reject/archive)
+                      </span>
+                    </label>
+                    <textarea
+                      className="input text-sm min-h-[80px]"
                       placeholder="Leave feedback for the submitter..."
                       value={remarks[project.id] || ''}
-                      onChange={e => setRemarks(r => ({ ...r, [project.id]: e.target.value }))} />
+                      onChange={e => setRemarks(r => ({ ...r, [project.id]: e.target.value }))}
+                    />
                   </div>
 
-                  {/* Action buttons */}
                   <div className="flex gap-2 flex-wrap pt-1">
-                    {/* OC approves → forward to CO */}
-                    {(project.status === 'submitted' || project.status === 'under_oc_review') && (
-                      <button onClick={() => act(project, 'approve_to_co')} disabled={actingOn === project.id}
+                    {/* OC/NC: approve to CO — only shown for OC type or admin on OC-stage projects */}
+                    {(project.status === 'submitted' || project.status === 'under_oc_review') &&
+                      (approverType === 'OC/NC' || approverType === null) && (
+                      <button
+                        onClick={() => act(project, 'approve_to_co')}
+                        disabled={actingOn === project.id}
                         className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors">
                         <CheckCircle className="w-4 h-4" /> Approve → CO
                       </button>
                     )}
-                    {/* CO final publish */}
-                    {project.status === 'under_co_review' && (
-                      <button onClick={() => act(project, 'approve_final')} disabled={actingOn === project.id}
+
+                    {/* CO: final publish — only shown for CO type or admin on CO-stage */}
+                    {project.status === 'under_co_review' &&
+                      (approverType === 'CO' || approverType === null) && (
+                      <button
+                        onClick={() => act(project, 'approve_final')}
+                        disabled={actingOn === project.id}
                         className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg text-white font-medium transition-colors"
                         style={{ backgroundColor: 'var(--olive)' }}>
                         <CheckCircle className="w-4 h-4" /> Publish to registry
                       </button>
                     )}
-                    <button onClick={() => act(project, 'reject')} disabled={actingOn === project.id}
+
+                    <button
+                      onClick={() => act(project, 'reject')}
+                      disabled={actingOn === project.id}
                       className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-medium border border-red-200 transition-colors">
                       <XCircle className="w-4 h-4" /> Reject
                     </button>
-                    <button onClick={() => act(project, 'archive')} disabled={actingOn === project.id}
+
+                    <button
+                      onClick={() => act(project, 'archive')}
+                      disabled={actingOn === project.id}
                       className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium border border-gray-200 transition-colors">
                       <Archive className="w-4 h-4" /> Archive
                     </button>

@@ -1,4 +1,7 @@
+// src/lib/types.ts — TypeScript types for all database tables
+
 export type UserRole = 'submitter' | 'approver' | 'admin'
+export type ApproverType = 'OC/NC' | 'CO' | null
 
 export type ProjectStatus =
   | 'submitted'
@@ -16,6 +19,7 @@ export interface Profile {
   company: string
   vocation: string
   role: UserRole
+  approver_type: ApproverType
   created_at: string
 }
 
@@ -32,12 +36,12 @@ export interface Project {
   github_url: string | null
   pdf_url: string | null
   pdf_name: string | null
+  thumbnail_url: string | null
   status: ProjectStatus
   approved_by: string | null
   votes: number
   created_at: string
   updated_at: string
-  // joined
   profiles?: Profile
   user_voted?: boolean
 }
