@@ -6,29 +6,20 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Project, ProjectRemark, Profile, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
-import { Trash2, Plus, ChevronDown, ChevronUp, MessageSquare, Archive, X, Users } from 'lucide-react'
+import { Trash2, ChevronDown, ChevronUp, MessageSquare, Archive, X } from 'lucide-react'
 
-interface ApproverEmail {
-  id: string
-  email: string
-  name: string
-  approver_role: 'OC/NC' | 'CO'
-}
-
-type AdminTab = 'approvers' | 'users' | 'projects' | 'remarks'
+type AdminTab = 'users' | 'projects' | 'remarks'
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<AdminTab>('approvers')
-  const [approvers, setApprovers] = useState<ApproverEmail[]>([])
+  const [tab, setTab] = useState<AdminTab>('users')
   const [users, setUsers] = useState<Profile[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [remarks, setRemarks] = useState<ProjectRemark[]>([])
-  const [form, setForm] = useState({ email: '', name: '', approver_role: 'OC/NC' as 'OC/NC' | 'CO' })
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [expandedProject, setExpandedProject] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [savingUser, setSavingUser] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -40,18 +31,15 @@ export default function AdminPage() {
       if (p?.role !== 'admin') { router.push('/'); return }
 
       const [
-        { data: approverData },
         { data: userData },
         { data: projectData },
         { data: remarkData }
       ] = await Promise.all([
-        supabase.from('approver_emails').select('*').order('created_at', { ascending: true }),
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('projects').select('*, profiles(full_name, rank, company)').order('created_at', { ascending: false }),
         supabase.from('project_remarks').select('*, profiles(full_name, rank), projects(title)').order('created_at', { ascending: false }),
       ])
 
-      setApprovers(approverData || [])
       setUsers(userData || [])
       setProjects(projectData || [])
       setRemarks(remarkData || [])
@@ -60,36 +48,42 @@ export default function AdminPage() {
     load()
   }, [])
 
-  // ── Approver email actions ────────────────────────────────────────────────
-  const addApprover = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    const { data, error: err } = await supabase.from('approver_emails').insert(form).select().single()
-    if (err) { setError(err.message); return }
-    setApprovers(a => [...a, data])
-    setForm({ email: '', name: '', approver_role: 'OC/NC' })
-  }
-
-  const removeApprover = async (id: string) => {
-    await supabase.from('approver_emails').delete().eq('id', id)
-    setApprovers(a => a.filter(x => x.id !== id))
-  }
-
   // ── User role actions ─────────────────────────────────────────────────────
-  const updateUserRole = async (
-    userId: string,
-    role: string,
-    approverType: string | null
-  ) => {
+  // Maps dropdown value → role + approver_type stored in DB
+  // DB stores: role='approver', approver_type='OC/NC' or 'CO'
+  const ROLE_MAP: Record<string, { role: string; approver_type: string | null }> = {
+    'submitter':    { role: 'submitter',  approver_type: null },
+    'approver:OC/NC': { role: 'approver', approver_type: 'OC/NC' },
+    'approver:CO':  { role: 'approver',   approver_type: 'CO' },
+    'admin':        { role: 'admin',      approver_type: null },
+  }
+
+  // Maps DB values → dropdown value for display
+  const getDropdownValue = (role: string, approverType: string | null): string => {
+    if (role === 'submitter') return 'submitter'
+    if (role === 'admin') return 'admin'
+    if (role === 'approver') return `approver:${approverType || 'OC/NC'}`
+    return 'submitter'
+  }
+
+  const updateUserRole = async (userId: string, dropdownValue: string) => {
     setSavingUser(userId)
+    setSaveError(null)
+    const mapped = ROLE_MAP[dropdownValue]
+    if (!mapped) return
+
     const { error: err } = await supabase
       .from('profiles')
-      .update({ role, approver_type: approverType })
+      .update({ role: mapped.role, approver_type: mapped.approver_type })
       .eq('id', userId)
 
-    if (!err) {
+    if (err) {
+      setSaveError(`Failed to update: ${err.message}`)
+    } else {
       setUsers(us => us.map(u =>
-        u.id === userId ? { ...u, role: role as any, approver_type: approverType as any } : u
+        u.id === userId
+          ? { ...u, role: mapped.role as any, approver_type: mapped.approver_type as any }
+          : u
       ))
     }
     setSavingUser(null)
@@ -97,8 +91,7 @@ export default function AdminPage() {
 
   // ── Project actions ───────────────────────────────────────────────────────
   const archiveProject = async (id: string) => {
-    const { error: err } = await supabase
-      .from('projects').update({ status: 'archived' }).eq('id', id)
+    const { error: err } = await supabase.from('projects').update({ status: 'archived' }).eq('id', id)
     if (!err) setProjects(ps => ps.map(p => p.id === id ? { ...p, status: 'archived' } : p))
   }
 
@@ -120,107 +113,49 @@ export default function AdminPage() {
   if (loading) return <div className="text-sm text-gray-500 py-10 text-center">Loading...</div>
 
   const tabs: { key: AdminTab; label: string; count: number }[] = [
-    { key: 'approvers', label: 'Approver Emails', count: approvers.length },
-    { key: 'users', label: 'Users', count: users.length },
+    { key: 'users',    label: 'Users',    count: users.length },
     { key: 'projects', label: 'Projects', count: projects.length },
-    { key: 'remarks', label: 'Remarks', count: remarks.length },
+    { key: 'remarks',  label: 'Remarks',  count: remarks.length },
   ]
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Admin panel</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage users, approvers, projects, and remarks</p>
+        <p className="text-sm text-gray-500 mt-0.5">Manage users, projects, and remarks</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg flex-wrap">
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              tab === t.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}>
             {t.label}
-            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-500'}`}>
+            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+              tab === t.key ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-500'
+            }`}>
               {t.count}
             </span>
           </button>
         ))}
       </div>
 
-      {/* ── Tab: Approver Emails ── */}
-      {tab === 'approvers' && (
-        <div className="space-y-5">
-          <div className="card p-5">
-            <h2 className="font-semibold text-gray-800 text-sm mb-1">Add approver email</h2>
-            <p className="text-xs text-gray-500 mb-4">
-              Users who sign up with these emails automatically get the Approver role.
-              To change an existing user's role, use the Users tab.
-            </p>
-            <form onSubmit={addApprover} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Name</label>
-                  <input className="input" required value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Role</label>
-                  <select className="input" value={form.approver_role}
-                    onChange={e => setForm(f => ({ ...f, approver_role: e.target.value as 'OC/NC' | 'CO' }))}>
-                    <option value="OC">OC/NC</option>
-                    <option value="CO">CO</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input className="input" type="email" required value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <button type="submit" className="btn-primary text-sm">
-                <Plus className="w-4 h-4" /> Add approver
-              </button>
-            </form>
-          </div>
-
-          <div className="card overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-              <h2 className="font-semibold text-gray-700 text-sm">Registered approvers ({approvers.length})</h2>
-            </div>
-            {approvers.length === 0 ? (
-              <p className="text-sm text-gray-400 p-5">No approvers added yet</p>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {approvers.map(a => (
-                  <div key={a.id} className="flex items-center justify-between px-5 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{a.name}</p>
-                      <p className="text-xs text-gray-500">{a.email}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${a.approver_role === 'CO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {a.approver_role === 'OC/NC' ? 'OC/NC' : 'CO'}
-                      </span>
-                      <button onClick={() => removeApprover(a.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* ── Tab: Users ── */}
       {tab === 'users' && (
         <div className="card overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
             <h2 className="font-semibold text-gray-700 text-sm">All users ({users.length})</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Change role directly — updates immediately without SQL</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Change role from the dropdown — saves immediately
+            </p>
           </div>
+          {saveError && (
+            <div className="px-5 py-2 bg-red-50 border-b border-red-100">
+              <p className="text-xs text-red-600">{saveError}</p>
+            </div>
+          )}
           <div className="divide-y divide-gray-100">
             {users.map(u => (
               <div key={u.id} className="px-5 py-3 flex items-center gap-3">
@@ -232,31 +167,20 @@ export default function AdminPage() {
                   {u.company && <p className="text-xs text-gray-400">{u.company}</p>}
                 </div>
 
-                {/* Role selector */}
                 <div className="flex items-center gap-2 shrink-0">
                   <select
-                    className="input text-xs py-1 px-2 w-32"
-                    value={`${u.role}${u.approver_type ? ':' + u.approver_type : ''}`}
-                    onChange={async e => {
-                      const val = e.target.value
-                      if (val === 'submitter') {
-                        await updateUserRole(u.id, 'submitter', null)
-                      } else if (val === 'approver:OC') {
-                        await updateUserRole(u.id, 'approver', 'OC/NC')
-                      } else if (val === 'approver:CO') {
-                        await updateUserRole(u.id, 'approver', 'CO')
-                      } else if (val === 'admin') {
-                        await updateUserRole(u.id, 'admin', null)
-                      }
-                    }}
+                    className="input text-xs py-1 px-2 w-40"
+                    value={getDropdownValue(u.role, u.approver_type ?? null)}
+                    onChange={e => updateUserRole(u.id, e.target.value)}
+                    disabled={savingUser === u.id}
                   >
                     <option value="submitter">Submitter</option>
-                    <option value="approver:OC">Approver — OC/NC</option>
+                    <option value="approver:OC/NC">Approver — OC/NC</option>
                     <option value="approver:CO">Approver — CO</option>
                     <option value="admin">Admin</option>
                   </select>
                   {savingUser === u.id && (
-                    <span className="text-xs text-gray-400">Saving...</span>
+                    <span className="text-xs text-green-600">Saving...</span>
                   )}
                 </div>
               </div>
@@ -268,7 +192,9 @@ export default function AdminPage() {
       {/* ── Tab: Projects ── */}
       {tab === 'projects' && (
         <div className="space-y-3">
-          {projects.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No projects yet</p>}
+          {projects.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-8">No projects yet</p>
+          )}
           {projects.map(project => (
             <div key={project.id} className="card overflow-hidden">
               <div className="p-4 flex items-start gap-3">
@@ -290,20 +216,21 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {project.status !== 'archived' && (
-                    <button onClick={() => archiveProject(project.id)}
-                      title="Archive"
+                    <button onClick={() => archiveProject(project.id)} title="Archive"
                       className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-md transition-colors">
                       <Archive className="w-4 h-4" />
                     </button>
                   )}
-                  <button onClick={() => setConfirmDelete(project.id)}
-                    title="Delete permanently"
+                  <button onClick={() => setConfirmDelete(project.id)} title="Delete permanently"
                     className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
+                  <button
+                    onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
                     className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                    {expandedProject === project.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {expandedProject === project.id
+                      ? <ChevronUp className="w-4 h-4" />
+                      : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -339,7 +266,9 @@ export default function AdminPage() {
       {/* ── Tab: Remarks ── */}
       {tab === 'remarks' && (
         <div className="space-y-2">
-          {remarks.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No remarks yet</p>}
+          {remarks.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-8">No remarks yet</p>
+          )}
           {remarks.map(remark => (
             <div key={remark.id} className="card p-4 flex items-start gap-3">
               <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
