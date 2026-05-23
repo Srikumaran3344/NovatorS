@@ -1,4 +1,7 @@
-// PAGE — src/app/submit/edit/[id]/page.tsx — Resubmit Rejected Project
+// PAGE — src/app/submit/edit/[id]/page.tsx — Edit / Resubmit Project
+// Used for:
+//   - Resubmitting a rejected project (status: rejected)
+//   - Submitting an update to an approved project (status: approved)
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -19,6 +22,7 @@ export default function EditSubmitPage() {
   const [keepExistingPdf, setKeepExistingPdf] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [titleError, setTitleError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -32,7 +36,9 @@ export default function EditSubmitPage() {
 
       const { data: proj } = await supabase.from('projects').select('*').eq('id', id).single()
       if (!proj || proj.submitter_id !== user.id) { router.push('/dashboard'); return }
-      if (!['rejected'].includes(proj.status)) { router.push('/dashboard'); return }
+
+      // Only allow editing rejected or approved projects
+      if (!['rejected', 'approved'].includes(proj.status)) { router.push('/dashboard'); return }
 
       setProject(proj)
       setForm({
@@ -49,13 +55,33 @@ export default function EditSubmitPage() {
     load()
   }, [id])
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k: string, v: string) => {
+    setForm(f => ({ ...f, [k]: v }))
+    if (k === 'title') setTitleError('')
+  }
 
-  const handleResubmit = async (e: React.FormEvent) => {
+  const checkTitleUnique = async (title: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from('projects')
+      .select('id')
+      .ilike('title', title.trim())
+      .neq('id', project?.id) // exclude current project
+    return !data || data.length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile || !project) return
     setError('')
     setSubmitting(true)
+
+    // Check title uniqueness
+    const titleOk = await checkTitleUnique(form.title)
+    if (!titleOk) {
+      setTitleError('A project with this title already exists. Please use a different title.')
+      setSubmitting(false)
+      return
+    }
 
     let pdf_url = keepExistingPdf ? project.pdf_url : null
     let pdf_name = keepExistingPdf ? project.pdf_name : null
@@ -71,9 +97,15 @@ export default function EditSubmitPage() {
       pdf_name = pdfFile.name
     }
 
-    // Update project and reset status to submitted (new version for OC review)
+    const isRejected = project.status === 'rejected'
+    const newStatus = 'submitted' // always goes back to OC for review
+
     const { error: updateError } = await supabase.from('projects').update({
-      ...form, pdf_url, pdf_name, status: 'submitted',
+      ...form,
+      title: form.title.trim(),
+      pdf_url,
+      pdf_name,
+      status: newStatus,
     }).eq('id', project.id)
 
     if (updateError) { setError(updateError.message); setSubmitting(false); return }
@@ -82,9 +114,9 @@ export default function EditSubmitPage() {
       project_id: project.id,
       actor_id: profile.id,
       actor_name: `${profile.rank} ${profile.full_name}`,
-      action: 'Project resubmitted after rejection',
-      from_status: 'rejected',
-      to_status: 'submitted',
+      action: isRejected ? 'Project resubmitted after rejection' : 'Project updated — resubmitted for approval',
+      from_status: project.status,
+      to_status: newStatus,
     })
 
     router.push('/dashboard')
@@ -92,39 +124,60 @@ export default function EditSubmitPage() {
 
   if (!project || !profile) return <div className="text-sm text-gray-500 py-10 text-center">Loading...</div>
 
+  const isRejected = project.status === 'rejected'
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Resubmit project</h1>
-        <p className="text-sm text-gray-500 mt-1">Update your project and resubmit for OC review.</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isRejected ? 'Resubmit project' : 'Update project'}
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {isRejected
+            ? 'Address the feedback below and resubmit for OC/NC review.'
+            : 'Update your project details. It will be resubmitted to OC for re-approval.'}
+        </p>
       </div>
 
-      {/* Show rejection remarks if any */}
-      <RejectionRemarks projectId={project.id} />
+      {/* Show rejection reason if rejected */}
+      {isRejected && <RejectionRemarks projectId={project.id as string} />}
+
+      {/* Update warning for approved projects */}
+      {!isRejected && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-5">
+          <p className="text-sm text-amber-800">
+            <strong>Note:</strong> Updating an approved project will remove it from the public registry and send it back through the approval workflow.
+          </p>
+        </div>
+      )}
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-6 text-sm text-gray-700">
         Submitting as: <span className="font-medium">{profile.rank} {profile.full_name}</span> · {profile.company}
       </div>
 
-      <form onSubmit={handleResubmit} className="card p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="card p-6 space-y-5">
         <div>
           <label className="label">Project title *</label>
-          <input className="input" required value={form.title} onChange={e => set('title', e.target.value)} />
+          <input className={`input ${titleError ? 'border-red-400' : ''}`} required
+            value={form.title} onChange={e => set('title', e.target.value)} />
+          {titleError && <p className="text-xs text-red-600 mt-1">{titleError}</p>}
         </div>
 
         <div>
-          <label className="label">Short description *</label>
-          <input className="input" required maxLength={200} value={form.short_description} onChange={e => set('short_description', e.target.value)} />
+          <label className="label">Short description * <span className="text-gray-400 font-normal">(shown on registry cards)</span></label>
+          <input className="input" required maxLength={200}
+            value={form.short_description} onChange={e => set('short_description', e.target.value)} />
           <p className="text-xs text-gray-400 mt-1">{form.short_description.length}/200</p>
         </div>
 
         <div>
           <label className="label">Full description *</label>
-          <textarea className="input min-h-[160px]" required value={form.full_description} onChange={e => set('full_description', e.target.value)} />
+          <textarea className="input min-h-[160px]" required
+            value={form.full_description} onChange={e => set('full_description', e.target.value)} />
         </div>
 
         <div className="border-t border-gray-100 pt-5">
-          <p className="text-sm font-semibold text-gray-700 mb-3">OC details</p>
+          <p className="text-sm font-semibold text-gray-700 mb-3">OC/NC details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">OC/NC name *</label>
@@ -160,15 +213,18 @@ export default function EditSubmitPage() {
 
           {project.pdf_name && keepExistingPdf && !pdfFile && (
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800 mb-2">
-              <span className="flex-1 truncate">Keeping existing: {project.pdf_name}</span>
-              <button type="button" onClick={() => setKeepExistingPdf(false)} className="text-blue-500 hover:text-blue-700 text-xs underline">Remove</button>
+              <span className="flex-1 truncate">Keeping: {project.pdf_name}</span>
+              <button type="button" onClick={() => setKeepExistingPdf(false)}
+                className="text-blue-500 hover:text-blue-700 text-xs underline shrink-0">
+                Replace
+              </button>
             </div>
           )}
 
           {(!keepExistingPdf || !project.pdf_name) && !pdfFile && (
             <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-4 py-5 cursor-pointer hover:border-gray-300 transition-colors">
               <Upload className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-500">Click to upload new PDF (optional)</span>
+              <span className="text-sm text-gray-500">Click to upload PDF (optional)</span>
               <input type="file" accept=".pdf" className="hidden" onChange={e => {
                 const f = e.target.files?.[0]
                 if (f && f.size > 10 * 1024 * 1024) { setError('PDF must be under 10MB'); return }
@@ -180,7 +236,9 @@ export default function EditSubmitPage() {
           {pdfFile && (
             <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-green-800">
               <span className="flex-1 truncate">{pdfFile.name}</span>
-              <button type="button" onClick={() => setPdfFile(null)}><X className="w-4 h-4" /></button>
+              <button type="button" onClick={() => setPdfFile(null)}>
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -189,9 +247,12 @@ export default function EditSubmitPage() {
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={submitting} className="btn-primary text-sm px-6 py-2.5">
-            {submitting ? 'Resubmitting...' : 'Resubmit for approval'}
+            {submitting
+              ? 'Submitting...'
+              : isRejected ? 'Resubmit for approval' : 'Update and resubmit'}
           </button>
-          <button type="button" onClick={() => router.push('/dashboard')} className="btn-secondary text-sm px-4 py-2.5">
+          <button type="button" onClick={() => router.push('/dashboard')}
+            className="btn-secondary text-sm px-4 py-2.5">
             Cancel
           </button>
         </div>
@@ -200,7 +261,6 @@ export default function EditSubmitPage() {
   )
 }
 
-// Shows the rejection remarks from the last approval event
 function RejectionRemarks({ projectId }: { projectId: string }) {
   const [remarks, setRemarks] = useState<string | null>(null)
   const supabase = createClient()
@@ -212,7 +272,7 @@ function RejectionRemarks({ projectId }: { projectId: string }) {
       .eq('to_status', 'rejected')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (data?.remarks) setRemarks(`${data.actor_name}: "${data.remarks}"`)
       })

@@ -1,4 +1,4 @@
-// PAGE 4 — src/app/submit/page.tsx — Submit Project
+// PAGE 4 — src/app/submit/page.tsx — Submit New Project
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -10,17 +10,12 @@ import { Upload, X } from 'lucide-react'
 export default function SubmitPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [form, setForm] = useState({
-    title: '',
-    short_description: '',
-    full_description: '',
-    oc_name: '',
-    oc_email: '',
-    demo_video_url: '',
-    project_url: '',
-    github_url: '',
+    title: '', short_description: '', full_description: '',
+    oc_name: '', oc_email: '', demo_video_url: '', project_url: '', github_url: '',
   })
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   const [error, setError] = useState('')
+  const [titleError, setTitleError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -35,13 +30,32 @@ export default function SubmitPage() {
     getProfile()
   }, [])
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k: string, v: string) => {
+    setForm(f => ({ ...f, [k]: v }))
+    if (k === 'title') setTitleError('')
+  }
+
+  const checkTitleUnique = async (title: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from('projects')
+      .select('id')
+      .ilike('title', title.trim())
+    return !data || data.length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile) return
     setError('')
     setSubmitting(true)
+
+    // Check title uniqueness
+    const titleOk = await checkTitleUnique(form.title)
+    if (!titleOk) {
+      setTitleError('A project with this title already exists. Please use a different title.')
+      setSubmitting(false)
+      return
+    }
 
     let pdf_url = null
     let pdf_name = null
@@ -50,13 +64,8 @@ export default function SubmitPage() {
       const ext = pdfFile.name.split('.').pop()
       const path = `${profile.id}/${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage
-        .from('project-files')
-        .upload(path, pdfFile, { cacheControl: '3600', upsert: false })
-      if (uploadError) {
-        setError('PDF upload failed: ' + uploadError.message)
-        setSubmitting(false)
-        return
-      }
+        .from('project-files').upload(path, pdfFile, { cacheControl: '3600', upsert: false })
+      if (uploadError) { setError('PDF upload failed: ' + uploadError.message); setSubmitting(false); return }
       const { data: urlData } = supabase.storage.from('project-files').getPublicUrl(path)
       pdf_url = urlData.publicUrl
       pdf_name = pdfFile.name
@@ -64,15 +73,10 @@ export default function SubmitPage() {
 
     const { data: project, error: insertError } = await supabase
       .from('projects')
-      .insert({ ...form, submitter_id: profile.id, pdf_url, pdf_name, status: 'submitted' })
-      .select()
-      .single()
+      .insert({ ...form, title: form.title.trim(), submitter_id: profile.id, pdf_url, pdf_name, status: 'submitted' })
+      .select().single()
 
-    if (insertError) {
-      setError(insertError.message)
-      setSubmitting(false)
-      return
-    }
+    if (insertError) { setError(insertError.message); setSubmitting(false); return }
 
     await supabase.from('approval_events').insert({
       project_id: project.id,
@@ -102,22 +106,26 @@ export default function SubmitPage() {
       <form onSubmit={handleSubmit} className="card p-6 space-y-5">
         <div>
           <label className="label">Project title *</label>
-          <input className="input" required value={form.title} onChange={e => set('title', e.target.value)} />
+          <input className={`input ${titleError ? 'border-red-400' : ''}`} required
+            value={form.title} onChange={e => set('title', e.target.value)} />
+          {titleError && <p className="text-xs text-red-600 mt-1">{titleError}</p>}
         </div>
 
         <div>
           <label className="label">Short description * <span className="text-gray-400 font-normal">(shown on registry cards)</span></label>
-          <input className="input" required maxLength={200} value={form.short_description} onChange={e => set('short_description', e.target.value)} />
+          <input className="input" required maxLength={200}
+            value={form.short_description} onChange={e => set('short_description', e.target.value)} />
           <p className="text-xs text-gray-400 mt-1">{form.short_description.length}/200 characters</p>
         </div>
 
         <div>
           <label className="label">Full description *</label>
-          <textarea className="input min-h-[160px]" required value={form.full_description} onChange={e => set('full_description', e.target.value)} />
+          <textarea className="input min-h-[160px]" required
+            value={form.full_description} onChange={e => set('full_description', e.target.value)} />
         </div>
 
         <div className="border-t border-gray-100 pt-5">
-          <p className="text-sm font-semibold text-gray-700 mb-3">OC details</p>
+          <p className="text-sm font-semibold text-gray-700 mb-3">OC/NC details</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">OC/NC name *</label>
@@ -135,15 +143,18 @@ export default function SubmitPage() {
           <div className="space-y-3">
             <div>
               <label className="label">Demo video URL * <span className="text-gray-400 font-normal">(YouTube link)</span></label>
-              <input className="input" type="url" placeholder="https://youtube.com/watch?v=..." required value={form.demo_video_url} onChange={e => set('demo_video_url', e.target.value)} />
+              <input className="input" type="url" placeholder="https://youtube.com/watch?v=..." required
+                value={form.demo_video_url} onChange={e => set('demo_video_url', e.target.value)} />
             </div>
             <div>
               <label className="label">Project / deployment URL <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input className="input" type="url" placeholder="https://..." value={form.project_url} onChange={e => set('project_url', e.target.value)} />
+              <input className="input" type="url" placeholder="https://..."
+                value={form.project_url} onChange={e => set('project_url', e.target.value)} />
             </div>
             <div>
               <label className="label">GitHub URL <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input className="input" type="url" placeholder="https://github.com/..." value={form.github_url} onChange={e => set('github_url', e.target.value)} />
+              <input className="input" type="url" placeholder="https://github.com/..."
+                value={form.github_url} onChange={e => set('github_url', e.target.value)} />
             </div>
           </div>
         </div>
@@ -164,8 +175,7 @@ export default function SubmitPage() {
               <input type="file" accept=".pdf" className="hidden" onChange={e => {
                 const f = e.target.files?.[0]
                 if (f && f.size > 10 * 1024 * 1024) { setError('PDF must be under 10MB'); return }
-                setPdfFile(f || null)
-                setError('')
+                setPdfFile(f || null); setError('')
               }} />
             </label>
           )}
