@@ -1,4 +1,4 @@
-// src/lib/types.ts — TypeScript types for all database tables
+// src/lib/types.ts - TypeScript types for all database tables
 
 export type UserRole = 'submitter' | 'approver' | 'admin'
 export type ApproverType = 'OC/NC' | 'CO' | null

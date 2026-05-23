@@ -1,4 +1,4 @@
-// PAGE 4 — src/app/submit/page.tsx — Submit New Project
+// PAGE 4 - src/app/submit/page.tsx - Submit New Project
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -160,7 +160,7 @@ export default function SubmitPage() {
         </div>
 
         <div className="border-t border-gray-100 pt-5">
-          <label className="label">Supporting document <span className="text-gray-400 font-normal">(PDF, max 10MB — optional)</span></label>
+          <label className="label">Supporting document <span className="text-gray-400 font-normal">(PDF, max 10MB - optional)</span></label>
           {pdfFile ? (
             <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-green-800">
               <span className="flex-1 truncate">{pdfFile.name}</span>

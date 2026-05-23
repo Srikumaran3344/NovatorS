@@ -1,4 +1,4 @@
-// PAGE 3 — src/app/auth/register/page.tsx — Register
+// PAGE 3 - src/app/auth/register/page.tsx - Register
 'use client'
 
 import { useState } from 'react'

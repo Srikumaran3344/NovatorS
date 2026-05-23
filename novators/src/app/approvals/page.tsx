@@ -1,4 +1,4 @@
-// PAGE 6 — src/app/approvals/page.tsx — OC/NC and CO Approval Queue
+// PAGE 6 - src/app/approvals/page.tsx - OC/NC and CO Approval Queue
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -45,7 +45,7 @@ export default function ApprovalsPage() {
       } else if (type === 'CO') {
         statusFilter = ['under_co_review']
       } else {
-        // OC or approver with no type — sees submitted and under_oc_review
+        // OC or approver with no type - sees submitted and under_oc_review
         statusFilter = ['submitted', 'under_oc_review']
       }
 
@@ -98,8 +98,8 @@ export default function ApprovalsPage() {
       archive: 'archived',
     }
     const actionLabels: Record<string, string> = {
-      approve_to_co: 'Approved by OC/NC — forwarded to CO',
-      approve_final: 'Approved by CO — project published',
+      approve_to_co: 'Approved by OC/NC - forwarded to CO',
+      approve_final: 'Approved by CO - project published',
       reject: 'Rejected',
       archive: 'Archived with remarks',
     }
@@ -148,21 +148,21 @@ export default function ApprovalsPage() {
           : 'bg-blue-50 border-blue-200 text-blue-800'
       }`}>
         {approverType === 'CO'
-          ? 'You are reviewing as CO — you see projects forwarded by OC/NC for final approval.'
+          ? 'You are reviewing as CO - you see projects forwarded by OC/NC for final approval.'
           : approverType === 'OC/NC'
-          ? 'You are reviewing as OC/NC — you can approve projects to forward to CO, or reject them.'
-          : 'You are reviewing as Admin — you can see and act on all stages.'}
+          ? 'You are reviewing as OC/NC - you can approve projects to forward to CO, or reject them.'
+          : 'You are reviewing as Admin - you can see and act on all stages.'}
       </div>
 
       {projects.length === 0 ? (
         <div className="card p-12 text-center text-gray-400">
-          All caught up — no pending projects for your review stage
+          All caught up - no pending projects for your review stage
         </div>
       ) : (
         <div className="space-y-3">
           {projects.map(project => (
             <div key={project.id} className="card overflow-hidden">
-              {/* Header — click to expand */}
+              {/* Header - click to expand */}
               <div
                 className="p-5 flex items-start gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => handleExpand(project)}
@@ -230,7 +230,7 @@ export default function ApprovalsPage() {
                     <label className="label text-xs">
                       Remarks{' '}
                       <span className="text-gray-400 font-normal">
-                        (shown to submitter — required for reject/archive)
+                        (shown to submitter - required for reject/archive)
                       </span>
                     </label>
                     <textarea
@@ -242,7 +242,7 @@ export default function ApprovalsPage() {
                   </div>
 
                   <div className="flex gap-2 flex-wrap pt-1">
-                    {/* OC/NC: approve to CO — only shown for OC type or admin on OC-stage projects */}
+                    {/* OC/NC: approve to CO - only shown for OC type or admin on OC-stage projects */}
                     {(project.status === 'submitted' || project.status === 'under_oc_review') &&
                       (approverType === 'OC/NC' || approverType === null) && (
                       <button
@@ -253,7 +253,7 @@ export default function ApprovalsPage() {
                       </button>
                     )}
 
-                    {/* CO: final publish — only shown for CO type or admin on CO-stage */}
+                    {/* CO: final publish - only shown for CO type or admin on CO-stage */}
                     {project.status === 'under_co_review' &&
                       (approverType === 'CO' || approverType === null) && (
                       <button

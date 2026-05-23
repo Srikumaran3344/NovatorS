@@ -6,10 +6,10 @@ Innovation project submission and approval registry for 1 SAF TPT BN.
 
 ## Tech stack
 
-- **Next.js 14** (App Router) — frontend + API
-- **Supabase** — database, auth, storage, real-time
-- **Vercel** — hosting (free)
-- **Tailwind CSS** — styling
+- **Next.js 14** (App Router) - frontend + API
+- **Supabase** - database, auth, storage, real-time
+- **Vercel** - hosting (free)
+- **Tailwind CSS** - styling
 
 ## Setup
 

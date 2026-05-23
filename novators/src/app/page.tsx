@@ -1,4 +1,4 @@
-// PAGE 1 — src/app/page.tsx — Public Registry (homepage)
+// PAGE 1 - src/app/page.tsx - Public Registry (homepage)
 'use client'
 
 import { useEffect, useState } from 'react'

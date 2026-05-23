@@ -1,4 +1,4 @@
-// PAGE — src/app/auth/update-password/page.tsx — Set New Password (from reset email link)
+// PAGE - src/app/auth/update-password/page.tsx - Set New Password (from reset email link)
 'use client'
 
 import { useState } from 'react'

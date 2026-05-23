@@ -1,4 +1,4 @@
-// PAGE 2 — src/app/auth/login/page.tsx — Sign In
+// PAGE 2 - src/app/auth/login/page.tsx - Sign In
 'use client'
 
 import { useState } from 'react'

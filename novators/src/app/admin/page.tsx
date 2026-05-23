@@ -1,4 +1,4 @@
-// PAGE 8 — src/app/admin/page.tsx — Admin Panel
+// PAGE 8 - src/app/admin/page.tsx - Admin Panel
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -148,7 +148,7 @@ export default function AdminPage() {
           <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
             <h2 className="font-semibold text-gray-700 text-sm">All users ({users.length})</h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              Change role from the dropdown — saves immediately
+              Change role from the dropdown - saves immediately
             </p>
           </div>
           {saveError && (
@@ -161,7 +161,7 @@ export default function AdminPage() {
               <div key={u.id} className="px-5 py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">
-                    {u.rank} {u.full_name || '—'}
+                    {u.rank} {u.full_name || '-'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">{u.email}</p>
                   {u.company && <p className="text-xs text-gray-400">{u.company}</p>}
@@ -175,8 +175,8 @@ export default function AdminPage() {
                     disabled={savingUser === u.id}
                   >
                     <option value="submitter">Submitter</option>
-                    <option value="approver:OC/NC">Approver — OC/NC</option>
-                    <option value="approver:CO">Approver — CO</option>
+                    <option value="approver:OC/NC">Approver - OC/NC</option>
+                    <option value="approver:CO">Approver - CO</option>
                     <option value="admin">Admin</option>
                   </select>
                   {savingUser === u.id && (

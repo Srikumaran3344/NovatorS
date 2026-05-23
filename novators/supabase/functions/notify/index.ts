@@ -1,4 +1,4 @@
-// supabase/functions/notify/index.ts — Email notification Edge Function
+// supabase/functions/notify/index.ts - Email notification Edge Function
 // Triggered by a Supabase Database Webhook on approval_events INSERT
 
 // Use a recent std version to ensure the module and types are available
@@ -14,7 +14,7 @@ import { serve } from 'std/http/server.ts'
 //    - For production:    'no-reply@yourdomain.com' (after adding domain in Resend dashboard)
 //
 // 3. RESEND_API_KEY and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set as
-//    Supabase secrets — you do NOT hardcode them here. They are already available
+//    Supabase secrets - you do NOT hardcode them here. They are already available
 //    as environment variables inside the deployed function.
 // ─────────────────────────────────────────────────────────────────────────────
 

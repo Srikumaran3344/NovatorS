@@ -1,4 +1,4 @@
-// PAGE 5 — src/app/dashboard/page.tsx — My Projects Dashboard
+// PAGE 5 - src/app/dashboard/page.tsx - My Projects Dashboard
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -68,7 +68,7 @@ export default function DashboardPage() {
               <div className="p-5 flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    {/* Title — links to registry if approved, plain text otherwise */}
+                    {/* Title - links to registry if approved, plain text otherwise */}
                     {project.status === 'approved' ? (
                       <Link href={`/projects/${project.id}`}
                         className="font-semibold text-gray-900 text-sm hover:underline flex items-center gap-1">

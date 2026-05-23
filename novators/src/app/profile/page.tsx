@@ -1,4 +1,4 @@
-// PAGE — src/app/profile/page.tsx — Edit Profile
+// PAGE - src/app/profile/page.tsx - Edit Profile
 'use client'
 
 import { useEffect, useState } from 'react'

@@ -1,4 +1,4 @@
-// PAGE 7 — src/app/projects/[id]/page.tsx — Project Detail
+// PAGE 7 - src/app/projects/[id]/page.tsx - Project Detail
 'use client'
 
 import { useEffect, useState } from 'react'

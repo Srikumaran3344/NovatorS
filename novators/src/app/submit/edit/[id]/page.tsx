@@ -1,4 +1,4 @@
-// PAGE 7 — src/app/projects/[id]/page.tsx — Project Detail
+// PAGE 7 - src/app/projects/[id]/page.tsx - Project Detail
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
@@ -59,19 +59,19 @@ export default function ProjectDetailPage() {
     setProject(p => p ? { ...p, votes: nowVoted ? p.votes + 1 : Math.max(p.votes - 1, 0) } : p)
 
     if (voted) {
-      // Remove vote — DB trigger decrements votes column automatically
+      // Remove vote - DB trigger decrements votes column automatically
       await supabase.from('project_votes')
         .delete()
         .eq('project_id', project.id)
         .eq('user_id', profile.id)
     } else {
-      // Insert vote — DB trigger increments votes column automatically
+      // Insert vote - DB trigger increments votes column automatically
       // Unique constraint prevents duplicates at DB level
       const { error } = await supabase.from('project_votes')
         .insert({ project_id: project.id, user_id: profile.id })
 
       if (error) {
-        // Unique constraint fired — already voted, revert optimistic update
+        // Unique constraint fired - already voted, revert optimistic update
         setVoted(true)
         setProject(p => p ? { ...p, votes: p.votes - 1 } : p)
       }
