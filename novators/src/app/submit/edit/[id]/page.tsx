@@ -1,4 +1,4 @@
-// PAGE — src/app/submit/edit/[id]/page.tsx — Edit / Resubmit / Update Project
+// PAGE - src/app/submit/edit/[id]/page.tsx - Edit / Resubmit / Update Project
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -174,7 +174,7 @@ export default function EditSubmitPage() {
         project_id: project.id,
         actor_id: profile.id,
         actor_name: `${profile.rank} ${profile.full_name}`,
-        action: 'Update submitted for approval — live version unchanged until CO approves',
+        action: 'Update submitted for approval - live version unchanged until CO approves',
         from_status: 'approved',
         to_status: 'approved',
       })

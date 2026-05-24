@@ -1,4 +1,4 @@
-// PAGE 6 — src/app/approvals/page.tsx — OC/NC and CO Approval Queue
+// PAGE 6 - src/app/approvals/page.tsx - OC/NC and CO Approval Queue
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -8,8 +8,8 @@ import { Project, Profile, ProjectStatus, STATUS_COLORS, STATUS_LABELS } from '@
 import { CheckCircle, XCircle, Archive, ExternalLink, GitBranch, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 
 // A project needing approval is either:
-// 1. status in (submitted, under_oc_review, under_co_review) — new/resubmitted project
-// 2. status = approved AND pending_update_status is not null — update to existing project
+// 1. status in (submitted, under_oc_review, under_co_review) - new/resubmitted project
+// 2. status = approved AND pending_update_status is not null - update to existing project
 type ApprovalProject = Project & {
   pending_update?: Record<string, any> | null
   pending_update_status?: string | null
@@ -58,7 +58,7 @@ export default function ApprovalsPage() {
         .in('status', statusFilter)
         .order('created_at', { ascending: true })
 
-      // Updates to existing approved projects — filter by oc_email so only
+      // Updates to existing approved projects - filter by oc_email so only
       // the specific OC/NC the submitter addressed sees the request
       let updateProjects: ApprovalProject[] = []
       if (type === 'CO' || p.role === 'admin') {
@@ -155,7 +155,7 @@ export default function ApprovalsPage() {
           project_id: project.id,
           actor_id: profile.id,
           actor_name: `${profile.rank} ${profile.full_name}`,
-          action: 'Update approved by OC/NC — forwarded to CO',
+          action: 'Update approved by OC/NC - forwarded to CO',
           remarks: remarks[project.id] || null,
           from_status: 'approved',
           to_status: 'approved',
@@ -182,7 +182,7 @@ export default function ApprovalsPage() {
           project_id: project.id,
           actor_id: profile.id,
           actor_name: `${profile.rank} ${profile.full_name}`,
-          action: 'Update approved by CO — live version updated',
+          action: 'Update approved by CO - live version updated',
           remarks: remarks[project.id] || null,
           from_status: 'approved',
           to_status: 'approved',
@@ -197,7 +197,7 @@ export default function ApprovalsPage() {
           project_id: project.id,
           actor_id: profile.id,
           actor_name: `${profile.rank} ${profile.full_name}`,
-          action: 'Update rejected — live version unchanged',
+          action: 'Update rejected - live version unchanged',
           remarks: remarks[project.id] || null,
           from_status: 'approved',
           to_status: 'approved',
@@ -212,8 +212,8 @@ export default function ApprovalsPage() {
         archive: 'archived',
       }
       const actionLabels: Record<string, string> = {
-        approve_to_co: 'Approved by OC/NC — forwarded to CO',
-        approve_final: 'Approved by CO — project published',
+        approve_to_co: 'Approved by OC/NC - forwarded to CO',
+        approve_final: 'Approved by CO - project published',
         reject: 'Rejected',
         archive: 'Archived',
       }
@@ -262,15 +262,15 @@ export default function ApprovalsPage() {
           : 'bg-blue-50 border-blue-200 text-blue-800'
       }`}>
         {approverType === 'CO'
-          ? 'CO view — you see projects and updates forwarded by OC/NC for final approval.'
+          ? 'CO view - you see projects and updates forwarded by OC/NC for final approval.'
           : approverType === 'OC/NC'
-          ? 'OC/NC view — you see new submissions and project updates. Approve to forward to CO.'
-          : 'Admin view — all stages visible.'}
+          ? 'OC/NC view - you see new submissions and project updates. Approve to forward to CO.'
+          : 'Admin view - all stages visible.'}
       </div>
 
       {projects.length === 0 ? (
         <div className="card p-12 text-center text-gray-400">
-          All caught up — no pending items for your review stage
+          All caught up - no pending items for your review stage
         </div>
       ) : (
         <div className="space-y-3">
@@ -317,7 +317,7 @@ export default function ApprovalsPage() {
                 {expanded === project.id && (
                   <div className="border-t border-gray-100 p-5 space-y-4">
 
-                    {/* Show which OC/NC approved and forwarded — visible to CO and admin */}
+                    {/* Show which OC/NC approved and forwarded - visible to CO and admin */}
                     {(approverType === 'CO' || profile?.role === 'admin') && ocApprovedBy[project.id] && (
                       <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
                         <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
@@ -328,7 +328,7 @@ export default function ApprovalsPage() {
                       </div>
                     )}
 
-                    {/* For updates — show diff between current and proposed */}
+                    {/* For updates - show diff between current and proposed */}
                     {isPendingUpdate && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
                         <p className="font-semibold mb-1">This is a proposed update to an already-published project.</p>
@@ -345,7 +345,7 @@ export default function ApprovalsPage() {
                       <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{displayData.full_description}</p>
                     </div>
 
-                    {/* Scale — editable by OC/NC and CO */}
+                    {/* Scale - editable by OC/NC and CO */}
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                         Project scale{' '}
