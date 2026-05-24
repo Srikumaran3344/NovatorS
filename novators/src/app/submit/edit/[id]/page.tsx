@@ -1,4 +1,4 @@
-// PAGE - src/app/submit/edit/[id]/page.tsx - Edit / Resubmit Project
+// PAGE — src/app/submit/edit/[id]/page.tsx — Edit / Resubmit / Update Project
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -39,18 +39,24 @@ export default function EditSubmitPage() {
       if (!['rejected', 'approved'].includes(proj.status)) { router.push('/dashboard'); return }
 
       setProject(proj)
-      const base = proj.pending_update || proj
+
+      // Pre-fill from pending_update if one exists, otherwise from live project
+      const base = (proj.pending_update && Object.keys(proj.pending_update).length > 0)
+        ? proj.pending_update
+        : proj
+
       setForm({
-        title: base.title || proj.title,
-        short_description: base.short_description || proj.short_description,
-        full_description: base.full_description || proj.full_description,
-        oc_email: base.oc_email || proj.oc_email,
-        demo_video_url: base.demo_video_url || proj.demo_video_url || '',
-        project_url: base.project_url || proj.project_url || '',
-        github_url: base.github_url || proj.github_url || '',
-        project_scale: base.project_scale || proj.project_scale || 'Unit',
+        title: base.title || '',
+        short_description: base.short_description || '',
+        full_description: base.full_description || '',
+        oc_email: base.oc_email || '',
+        demo_video_url: base.demo_video_url || '',
+        project_url: base.project_url || '',
+        github_url: base.github_url || '',
+        project_scale: base.project_scale || 'Unit',
       })
 
+      // Load rejection remark if rejected
       if (proj.status === 'rejected') {
         const { data: ev } = await supabase
           .from('approval_events')
@@ -94,6 +100,7 @@ export default function EditSubmitPage() {
     setError('')
     setSubmitting(true)
 
+    // Title uniqueness
     const titleOk = await checkTitleUnique(form.title)
     if (!titleOk) {
       setTitleError('A project with this title already exists.')
@@ -101,6 +108,7 @@ export default function EditSubmitPage() {
       return
     }
 
+    // OC/NC email validation
     const ocCheck = await validateOcEmail(form.oc_email)
     if (!ocCheck.valid) {
       setOcEmailError('This email is not registered as an OC/NC.')
@@ -110,20 +118,32 @@ export default function EditSubmitPage() {
 
     const isRejected = project.status === 'rejected'
     const payload = {
-      ...form,
       title: form.title.trim(),
+      short_description: form.short_description,
+      full_description: form.full_description,
       oc_email: form.oc_email.trim().toLowerCase(),
       oc_name: ocCheck.name || '',
+      demo_video_url: form.demo_video_url || null,
+      project_url: form.project_url || null,
+      github_url: form.github_url || null,
+      project_scale: form.project_scale,
     }
 
     if (isRejected) {
+      // ── Resubmit rejected: replace project data, reset to submitted ───────
       const { error: err } = await supabase.from('projects').update({
         ...payload,
         status: 'submitted',
         pending_update: null,
         pending_update_status: null,
       }).eq('id', project.id)
-      if (err) { setError(err.message); setSubmitting(false); return }
+
+      if (err) {
+        console.error('Resubmit error:', err)
+        setError(`Failed to resubmit: ${err.message}`)
+        setSubmitting(false)
+        return
+      }
 
       await supabase.from('approval_events').insert({
         project_id: project.id,
@@ -133,19 +153,28 @@ export default function EditSubmitPage() {
         from_status: 'rejected',
         to_status: 'submitted',
       })
+
     } else {
-      // Approved - store as pending update, keep live version unchanged
+      // ── Update approved project: store as pending_update ─────────────────
+      // Project stays 'approved' and visible in registry
+      // OC/NC sees it in their approvals queue via pending_update_status = 'submitted'
       const { error: err } = await supabase.from('projects').update({
         pending_update: payload,
         pending_update_status: 'submitted',
       }).eq('id', project.id)
-      if (err) { setError(err.message); setSubmitting(false); return }
+
+      if (err) {
+        console.error('Update submit error:', err)
+        setError(`Failed to submit update: ${err.message}`)
+        setSubmitting(false)
+        return
+      }
 
       await supabase.from('approval_events').insert({
         project_id: project.id,
         actor_id: profile.id,
         actor_name: `${profile.rank} ${profile.full_name}`,
-        action: 'Update submitted for approval (live version unchanged)',
+        action: 'Update submitted for approval — live version unchanged until CO approves',
         from_status: 'approved',
         to_status: 'approved',
       })
@@ -159,6 +188,9 @@ export default function EditSubmitPage() {
   )
 
   const isRejected = project.status === 'rejected'
+  const hasPendingUpdate = !isRejected &&
+    project.pending_update_status != null &&
+    Object.keys(project.pending_update || {}).length > 0
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -193,7 +225,19 @@ export default function EditSubmitPage() {
         </div>
       )}
 
-      {!isRejected && (
+      {/* Already has a pending update in progress */}
+      {hasPendingUpdate && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-5">
+          <p className="text-sm text-amber-800">
+            <strong>Note:</strong> An update is already under review
+            (status: <span className="font-medium capitalize">{project.pending_update_status?.replace(/_/g, ' ')}</span>).
+            Submitting now will replace that pending update with this new version.
+          </p>
+        </div>
+      )}
+
+      {/* Update stays live notice */}
+      {!isRejected && !hasPendingUpdate && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-5">
           <p className="text-sm text-blue-800">
             Your project will <strong>remain published</strong> while this update goes through
@@ -208,6 +252,7 @@ export default function EditSubmitPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-5">
+
         <div>
           <label className="label">Project title *</label>
           <input className={`input ${titleError ? 'border-red-400' : ''}`} required
@@ -228,7 +273,6 @@ export default function EditSubmitPage() {
             value={form.full_description} onChange={e => set('full_description', e.target.value)} />
         </div>
 
-        {/* Project scale */}
         <div>
           <label className="label">Project scale *</label>
           <div className="flex gap-2 flex-wrap">
@@ -278,11 +322,17 @@ export default function EditSubmitPage() {
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={submitting} className="btn-primary text-sm px-6 py-2.5">
-            {submitting ? 'Submitting...' : isRejected ? 'Resubmit for approval' : 'Submit update'}
+            {submitting
+              ? 'Submitting...'
+              : isRejected ? 'Resubmit for approval' : 'Submit update for approval'}
           </button>
           <button type="button" onClick={() => router.push('/dashboard')}
             className="btn-secondary text-sm px-4 py-2.5">

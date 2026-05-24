@@ -132,11 +132,7 @@ export default function ProjectDetailPage() {
             <GitBranch className="w-3.5 h-3.5" /> GitHub
           </a>
         )}
-        {project.pdf_url && (
-          <a href={project.pdf_url} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs">
-            <FileText className="w-3.5 h-3.5" /> {project.pdf_name || 'Download PDF'}
-          </a>
-        )}
+
         <button onClick={handleVote} disabled={!profile} title={!profile ? 'Sign in to vote' : ''}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border font-medium transition-colors ${
             voted ? 'bg-green-50 border-green-300 text-green-700'
