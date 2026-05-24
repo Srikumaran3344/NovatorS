@@ -1,4 +1,4 @@
-// PAGE 1 — src/app/page.tsx — Public Registry (paginated, server-side search)
+// PAGE 1 - src/app/page.tsx - Public Registry (paginated, server-side search)
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
@@ -76,7 +76,7 @@ export default function RegistryPage() {
     votingRef.current = true
 
     const hasVoted = (project as any).user_voted
-    // Only insert/delete in project_votes — DB trigger handles votes column
+    // Only insert/delete in project_votes - DB trigger handles votes column
     if (hasVoted) {
       await supabase.from('project_votes')
         .delete().eq('project_id', project.id).eq('user_id', userId)
@@ -171,7 +171,7 @@ export default function RegistryPage() {
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => {
-                // Show first, last, current, and neighbours — ellipsis for the rest
+                // Show first, last, current, and neighbours - ellipsis for the rest
                 const show = p === 1 || p === totalPages || Math.abs(p - page) <= 1
                 const showEllipsisBefore = p === page - 2 && page > 3
                 const showEllipsisAfter = p === page + 2 && page < totalPages - 2
@@ -249,12 +249,7 @@ function ProjectCard({ project, userId, onVote }: {
             <GitBranch className="w-3 h-3" /> GitHub
           </a>
         )}
-        {project.pdf_url && (
-          <a href={project.pdf_url} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1">
-            <FileText className="w-3 h-3" /> PDF
-          </a>
-        )}
+
       </div>
 
       <div className="flex items-center justify-between pt-1 border-t border-gray-100">

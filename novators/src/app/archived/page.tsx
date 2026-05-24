@@ -1,4 +1,4 @@
-// PAGE — src/app/archived/page.tsx — Archived Projects (read-only reference)
+// PAGE - src/app/archived/page.tsx - Archived Projects (read-only reference)
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -84,7 +84,7 @@ export default function ArchivedPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Archived Projects</h1>
-          <p className="text-sm text-gray-500">Reference only — projects archived by commanders</p>
+          <p className="text-sm text-gray-500">Reference only - projects archived by commanders</p>
         </div>
       </div>
 
@@ -187,7 +187,7 @@ export default function ArchivedPage() {
                       </p>
                     </div>
 
-                    {/* Links — view only, no actions */}
+                    {/* Links - view only, no actions */}
                     <div className="flex gap-3 flex-wrap">
                       {project.demo_video_url && (
                         <a href={project.demo_video_url} target="_blank" rel="noopener noreferrer"
@@ -207,12 +207,7 @@ export default function ArchivedPage() {
                           <ExternalLink className="w-3 h-3" /> Live project
                         </a>
                       )}
-                      {project.pdf_url && (
-                        <a href={project.pdf_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> {project.pdf_name || 'PDF'}
-                        </a>
-                      )}
+
                     </div>
 
                     {/* Read-only note */}

@@ -6,11 +6,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-
 const RANKS = ['REC','PTE','LCP','CPL','CFC','SCT','3SG','2SG','1SG','SSG','MSG','3WO','2WO','1WO','MWO','SWO','CWO','2LT','LTA','CPT','MAJ','LTC','SLTC','COL','BG','MG','LG']
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', rank: 'PTE', company: '', vocation: '' })
+  const [form, setForm] = useState({
+    email: '', password: '', full_name: '', rank: 'PTE', company: '', vocation: ''
+  })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -23,24 +24,26 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    // Pass ALL fields through raw_user_meta_data so the DB trigger
+    // can write them directly - no separate update call needed
+    const { error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.full_name } },
+      options: {
+        data: {
+          full_name: form.full_name,
+          rank: form.rank,
+          company: form.company,
+          vocation: form.vocation,
+        },
+      },
     })
 
-    if (signUpError || !data.user) {
-      setError(signUpError?.message || 'Registration failed')
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
       return
     }
-
-    await supabase.from('profiles').update({
-      rank: form.rank,
-      company: form.company,
-      vocation: form.vocation,
-      full_name: form.full_name,
-    }).eq('id', data.user.id)
 
     router.push('/dashboard')
     router.refresh()
@@ -50,10 +53,10 @@ export default function RegisterPage() {
     <div className="max-w-md mx-auto mt-12">
       <div className="card p-8">
         <div className="flex items-center gap-2 mb-6">
-          <img src="/myLogo.png" alt="Logo" className="w-9 h-9 rounded-lg flex items-center justify-center object-contain"/>
+          <img src="/myLogo.png" alt="NovatorS" className="w-9 h-9 rounded-lg object-contain" />
           <div>
             <h1 className="font-bold text-gray-900 text-lg leading-tight">Create account</h1>
-            <p className="text-xs text-gray-500">SAF Project Registry</p>
+            <p className="text-xs text-gray-500">NovatorS</p>
           </div>
         </div>
 
@@ -67,34 +70,40 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="label">Full name</label>
-              <input className="input" required value={form.full_name} onChange={e => set('full_name', e.target.value)} />
+              <input className="input" required value={form.full_name}
+                onChange={e => set('full_name', e.target.value)} />
             </div>
           </div>
 
           <div>
             <label className="label">Company / Platoon</label>
-            <input className="input" placeholder="e.g. HQ Company" required value={form.company} onChange={e => set('company', e.target.value)} />
+            <input className="input" placeholder="e.g. HQ Company" required
+              value={form.company} onChange={e => set('company', e.target.value)} />
           </div>
 
           <div>
             <label className="label">Vocation</label>
-            <input className="input" placeholder="e.g. ASA, TO(CBT), SAGE" value={form.vocation} onChange={e => set('vocation', e.target.value)} />
+            <input className="input" placeholder="e.g. Clerk, Driver, Medic"
+              value={form.vocation} onChange={e => set('vocation', e.target.value)} />
           </div>
 
           <div>
             <label className="label">Email</label>
-            <input className="input" type="email" required value={form.email} onChange={e => set('email', e.target.value)} />
+            <input className="input" type="email" required
+              value={form.email} onChange={e => set('email', e.target.value)} />
           </div>
 
           <div>
             <label className="label">Password</label>
-            <input className="input" type="password" required minLength={8} value={form.password} onChange={e => set('password', e.target.value)} />
+            <input className="input" type="password" required minLength={8}
+              value={form.password} onChange={e => set('password', e.target.value)} />
             <p className="text-xs text-gray-400 mt-1">Minimum 8 characters</p>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-sm">
+          <button type="submit" disabled={loading}
+            className="btn-primary w-full justify-center py-2.5 text-sm">
             {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>

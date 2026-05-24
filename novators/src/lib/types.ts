@@ -1,7 +1,8 @@
-// src/lib/types.ts — TypeScript types for all database tables
+// src/lib/types.ts
 
 export type UserRole = 'submitter' | 'approver' | 'admin'
 export type ApproverType = 'OC/NC' | 'CO' | null
+export type ProjectScale = 'SAF' | 'Formation' | 'Unit' | 'Coy'
 
 export type ProjectStatus =
   | 'submitted'
@@ -29,14 +30,12 @@ export interface Project {
   short_description: string
   full_description: string
   submitter_id: string
-  oc_name: string
+  oc_name: string | null
   oc_email: string
   demo_video_url: string | null
   project_url: string | null
   github_url: string | null
-  pdf_url: string | null
-  pdf_name: string | null
-  thumbnail_url: string | null
+  project_scale: ProjectScale
   status: ProjectStatus
   approved_by: string | null
   votes: number
@@ -86,3 +85,12 @@ export const STATUS_COLORS: Record<ProjectStatus, string> = {
   rejected: 'bg-red-100 text-red-800',
   archived: 'bg-gray-100 text-gray-600',
 }
+
+export const SCALE_COLORS: Record<ProjectScale, string> = {
+  SAF: 'bg-red-100 text-red-800',
+  Formation: 'bg-orange-100 text-orange-800',
+  Unit: 'bg-blue-100 text-blue-800',
+  Coy: 'bg-gray-100 text-gray-700',
+}
+
+export const PROJECT_SCALES: ProjectScale[] = ['SAF', 'Formation', 'Unit', 'Coy']

@@ -1,4 +1,4 @@
-// PAGE — src/app/manage/page.tsx — CO User Management (limited admin)
+// PAGE - src/app/manage/page.tsx - CO User Management (limited admin)
 // CO can only change: submitter → OC/NC and OC/NC → submitter
 // CO cannot promote anyone to CO or admin
 'use client'
@@ -30,7 +30,7 @@ export default function ManagePage() {
       }
       setProfile(p)
 
-      // Load all submitters and OC/NC users (not CO or admin — CO cannot manage those)
+      // Load all submitters and OC/NC users (not CO or admin - CO cannot manage those)
       const { data } = await supabase
         .from('profiles')
         .select('*')
@@ -131,7 +131,7 @@ export default function ManagePage() {
         )}
       </div>
 
-      {/* Submitters — appoint as OC/NC */}
+      {/* Submitters - appoint as OC/NC */}
       <div className="card overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
           <h2 className="font-semibold text-gray-700 text-sm">

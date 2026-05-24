@@ -48,7 +48,7 @@ export default function Navbar() {
     ...(profile?.role === 'approver' || profile?.role === 'admin'
       ? [{ href: '/approvals', label: 'Approvals' }]
       : []),
-    ...((profile?.role === 'approver' && (profile as any)?.approver_type === 'CO') || profile?.role === 'admin'
+    ...((profile?.role === 'approver' && (profile as any)?.approver_type === 'CO')
       ? [{ href: '/manage', label: 'Manage' }]
       : []),
     ...(profile?.role === 'admin'
