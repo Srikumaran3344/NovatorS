@@ -52,11 +52,33 @@ export default function ApprovalsPage() {
       }
 
       // New/resubmitted projects
-      const { data: newProjects } = await supabase
-        .from('projects')
-        .select('*, profiles(full_name, rank, company, vocation)')
-        .in('status', statusFilter)
-        .order('created_at', { ascending: true })
+      // Admin and CO see all in their stage
+      // OC/NC only sees projects where oc_email matches their own email
+      let newProjects: ApprovalProject[] = []
+      if (p.role === 'admin') {
+        const { data } = await supabase
+          .from('projects')
+          .select('*, profiles(full_name, rank, company, vocation)')
+          .in('status', statusFilter)
+          .order('created_at', { ascending: true })
+        newProjects = data || []
+      } else if (type === 'CO') {
+        const { data } = await supabase
+          .from('projects')
+          .select('*, profiles(full_name, rank, company, vocation)')
+          .in('status', statusFilter)
+          .order('created_at', { ascending: true })
+        newProjects = data || []
+      } else {
+        // OC/NC - only show projects submitted to their email
+        const { data } = await supabase
+          .from('projects')
+          .select('*, profiles(full_name, rank, company, vocation)')
+          .in('status', statusFilter)
+          .eq('oc_email', p.email)
+          .order('created_at', { ascending: true })
+        newProjects = data || []
+      }
 
       // Updates to existing approved projects - filter by oc_email so only
       // the specific OC/NC the submitter addressed sees the request
@@ -69,14 +91,31 @@ export default function ApprovalsPage() {
           .eq('pending_update_status', 'under_co_review')
         updateProjects = u || []
       } else if (type === 'OC/NC') {
-        // Only show updates where oc_email matches this approver's email
-        const { data: u } = await supabase
+        // Show updates where either:
+        // 1. The project's oc_email matches (original submission)
+        // 2. The pending_update's oc_email matches (submitter changed OC/NC in update)
+        const { data: u1 } = await supabase
           .from('projects')
           .select('*, profiles(full_name, rank, company)')
           .eq('status', 'approved')
           .in('pending_update_status', ['submitted', 'under_oc_review'])
           .eq('oc_email', p.email)
-        updateProjects = u || []
+
+        const { data: u2 } = await supabase
+          .from('projects')
+          .select('*, profiles(full_name, rank, company)')
+          .eq('status', 'approved')
+          .in('pending_update_status', ['submitted', 'under_oc_review'])
+          .filter('pending_update->>oc_email', 'eq', p.email)
+
+        // Merge and deduplicate by id
+        const combined = [...(u1 || []), ...(u2 || [])]
+        const seen = new Set<string>()
+        updateProjects = combined.filter(u => {
+          if (seen.has(u.id)) return false
+          seen.add(u.id)
+          return true
+        })
       }
 
       setProjects([...(newProjects || []), ...updateProjects])
