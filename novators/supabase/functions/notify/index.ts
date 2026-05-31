@@ -1,5 +1,5 @@
 /// <reference lib="deno.ns" />
-// supabase/functions/notify/index.ts — Email notification Edge Function
+// supabase/functions/notify/index.ts - Email notification Edge Function
 // Triggered by a Supabase Database Webhook on approval_events INSERT
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
@@ -37,7 +37,7 @@ interface Project {
   profiles: ProjectProfile
 }
 
-// Fix 2: No longer import serve() — Supabase Edge Functions on Deno 2.x
+// Fix 2: No longer import serve() - Supabase Edge Functions on Deno 2.x
 // use a default export handler instead of serve()
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
