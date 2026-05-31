@@ -236,7 +236,7 @@ function ProjectCard({ project, userId, onVote }: {
         </p>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap">
         {project.demo_video_url && (
           <a href={project.demo_video_url} target="_blank" rel="noopener noreferrer"
             className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1">
@@ -247,6 +247,12 @@ function ProjectCard({ project, userId, onVote }: {
           <a href={project.github_url} target="_blank" rel="noopener noreferrer"
             className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1">
             <GitBranch className="w-3 h-3" /> GitHub
+          </a>
+        )}
+        {project.project_url && (
+          <a href={project.project_url} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+            <ExternalLink className="w-3 h-3" /> Live project
           </a>
         )}
 
