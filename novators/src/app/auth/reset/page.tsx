@@ -1,4 +1,4 @@
-// PAGE — src/app/auth/reset/page.tsx — Password Reset Request
+// PAGE - src/app/auth/reset/page.tsx - Password Reset Request
 'use client'
 
 import { useState } from 'react'
@@ -42,7 +42,7 @@ export default function ResetPage() {
 
         {sent ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-            Check your email — we've sent a password reset link. Click it to set a new password.
+            Check your email - we've sent a password reset link. Click it to set a new password.
           </div>
         ) : (
           <form onSubmit={handleReset} className="space-y-4">

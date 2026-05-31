@@ -1,10 +1,10 @@
 /// <reference lib="deno.ns" />
-// supabase/functions/notify/index.ts - Email notification Edge Function
-// Triggered by a Supabase Database Webhook on approval_events INSERT
+// supabase/functions/notify/index.ts
+// Triggered by Supabase Database Webhook on approval_events INSERT
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const APP_URL = Deno.env.get('APP_URL') || 'http://localhost:3000'
-const FROM_ADDRESS = 'onboarding@resend.dev' // change to your domain in production
+const FROM_ADDRESS = 'onboarding@resend.dev'
 
 interface ApprovalEvent {
   project_id: string
@@ -14,11 +14,6 @@ interface ApprovalEvent {
   remarks: string | null
   to_status: string
   from_status: string | null
-}
-
-// Fix 1: Replace Record<string, any> with a proper typed interface
-interface PendingUpdate {
-  [key: string]: string | number | boolean | null | PendingUpdate | PendingUpdate[]
 }
 
 interface ProjectProfile {
@@ -32,20 +27,18 @@ interface Project {
   title: string
   oc_email: string
   oc_name: string
-  pending_update: PendingUpdate | null
+  pending_update: Record<string, string | null> | null
   pending_update_status: string | null
   profiles: ProjectProfile
 }
 
-// Fix 2: No longer import serve() - Supabase Edge Functions on Deno 2.x
-// use a default export handler instead of serve()
-export default async function handler(req: Request): Promise<Response> {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'authorization, content-type',
-      }
+      },
     })
   }
 
@@ -77,64 +70,51 @@ export default async function handler(req: Request): Promise<Response> {
     let subject = ''
     let body = ''
 
-    // ── Detect if this is a pending update action or a normal project action ──
-    // Update actions keep to_status = 'approved' and action contains 'Update'
     const isUpdateAction = event.action?.toLowerCase().includes('update')
 
     if (isUpdateAction) {
-      // ── Update flow emails ──────────────────────────────────────────────────
-
       if (event.action.includes('submitted for approval')) {
-        // Submitter submitted an update → email the OC/NC named in the project
         to = project.oc_email
         subject = `[NovatorS] Update submitted for review: ${project.title}`
         body = `
           <p>Hi ${project.oc_name || 'OC/NC'},</p>
           <p><strong>${submitterName}</strong> has submitted an update to an approved project for your review:</p>
           <h3 style="margin:12px 0 4px">${project.title}</h3>
-          <p>The published version remains live until the update is approved through the chain of command.</p>
+          <p>The published version remains live until the update is approved.</p>
           <p><a href="${approvalsUrl}" style="background:#4a5c2f;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:8px">Review update →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.action.includes('forwarded to CO')) {
-        // OC/NC approved update → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Your update is with the CO: ${project.title}`
         body = `
           <p>Hi ${submitterName},</p>
-          <p>Your update to <strong>${project.title}</strong> has been approved by ${event.actor_name} and forwarded to the CO for final approval.</p>
-          <p>The current published version remains live until CO approves.</p>
+          <p>Your update to <strong>${project.title}</strong> has been approved by ${event.actor_name} and forwarded to the CO.</p>
           <p><a href="${projectUrl}" style="color:#4a5c2f">View project →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.action.includes('live version updated')) {
-        // CO approved update → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Your update is now live: ${project.title}`
         body = `
           <p>Hi ${submitterName},</p>
-          <p>Your update to <strong>${project.title}</strong> has been approved by ${event.actor_name}. The registry has been updated with your new version.</p>
+          <p>Your update to <strong>${project.title}</strong> has been approved by ${event.actor_name} and is now live.</p>
           <p><a href="${projectUrl}" style="background:#4a5c2f;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:8px">View updated project →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.action.includes('Update rejected')) {
-        // Update rejected → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Update not approved: ${project.title}`
         body = `
           <p>Hi ${submitterName},</p>
-          <p>Your proposed update to <strong>${project.title}</strong> was reviewed by ${event.actor_name} and was not approved. The published version remains unchanged.</p>
+          <p>Your proposed update to <strong>${project.title}</strong> was not approved. The published version remains unchanged.</p>
           ${event.remarks ? `<p><strong>Reason:</strong> ${event.remarks}</p>` : ''}
           <p><a href="${APP_URL}/submit/edit/${project.id}" style="color:#4a5c2f">Submit a revised update →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       }
-
     } else {
-      // ── Normal project flow emails ──────────────────────────────────────────
-
       if (event.to_status === 'submitted') {
-        // New submission or resubmission → email OC/NC
         to = project.oc_email
         subject = `[NovatorS] Project submitted for your review: ${project.title}`
         body = `
@@ -145,17 +125,15 @@ export default async function handler(req: Request): Promise<Response> {
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.to_status === 'under_co_review') {
-        // OC/NC approved → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Your project is with the CO: ${project.title}`
         body = `
           <p>Hi ${submitterName},</p>
-          <p>Your project <strong>${project.title}</strong> has been approved by ${event.actor_name} and forwarded to the CO for final approval.</p>
+          <p>Your project <strong>${project.title}</strong> has been approved by ${event.actor_name} and forwarded to the CO.</p>
           <p><a href="${projectUrl}" style="color:#4a5c2f">View your project →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.to_status === 'approved') {
-        // CO final approval → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Your project is now published! ${project.title}`
         body = `
@@ -165,19 +143,16 @@ export default async function handler(req: Request): Promise<Response> {
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.to_status === 'rejected') {
-        // Rejected → email submitter with reason
         to = project.profiles.email
         subject = `[NovatorS] Update on your project: ${project.title}`
         body = `
           <p>Hi ${submitterName},</p>
           <p>Your project <strong>${project.title}</strong> was reviewed by ${event.actor_name} and was not approved at this stage.</p>
           ${event.remarks ? `<p><strong>Reason:</strong> ${event.remarks}</p>` : ''}
-          <p>You can update and resubmit from your dashboard.</p>
           <p><a href="${APP_URL}/dashboard" style="color:#4a5c2f">Go to dashboard →</a></p>
           <p style="color:#888;font-size:12px;margin-top:24px">NovatorS</p>
         `
       } else if (event.to_status === 'archived') {
-        // Archived → email submitter
         to = project.profiles.email
         subject = `[NovatorS] Your project has been archived: ${project.title}`
         body = `
@@ -212,14 +187,14 @@ export default async function handler(req: Request): Promise<Response> {
 
     const result = await emailRes.json()
     if (!emailRes.ok) {
-      console.error('Resend error:', result)
+      console.error('Resend error:', JSON.stringify(result))
       return new Response(JSON.stringify({ error: result }), { status: 500 })
     }
 
     return new Response(JSON.stringify({ success: true, id: result.id }), { status: 200 })
 
   } catch (err) {
-    console.error('Function error:', err)
+    console.error('Function error:', String(err))
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
   }
-}
+})
