@@ -77,13 +77,13 @@ export default function RegisterPage() {
 
           <div>
             <label className="label">Company / Platoon</label>
-            <input className="input" placeholder="e.g. HQ Company" required
+            <input className="input" placeholder="e.g. HQ" required
               value={form.company} onChange={e => set('company', e.target.value)} />
           </div>
 
           <div>
             <label className="label">Vocation</label>
-            <input className="input" placeholder="e.g. Clerk, Driver, Medic"
+            <input className="input" placeholder="e.g. ASA, SA(GE), TO(CBT) "
               value={form.vocation} onChange={e => set('vocation', e.target.value)} />
           </div>
 

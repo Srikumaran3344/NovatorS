@@ -6,9 +6,11 @@ Innovation project submission and approval registry for 1 SAF TPT BN.
 
 ## Tech stack
 
-- **Next.js 14** (App Router) - frontend + API
-- **Supabase** - database, auth, storage, real-time
+- **Next.js 14** (App Router) - frontend & API routes
+- **Supabase** - database, authentication, storage, and real-time subscriptions
 - **Vercel** - hosting (free)
+- **Uptime Robot** - keeps the Supabase instance active on the free tier
+- **Resend** - transactional email for all notifications
 - **Tailwind CSS** - styling
 
 ## Setup

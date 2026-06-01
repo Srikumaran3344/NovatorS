@@ -103,7 +103,7 @@ export default function RegistryPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="input pl-9" placeholder="Search projects..."
+          <input className="input !pl-9" placeholder="Search projects..."
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2">
